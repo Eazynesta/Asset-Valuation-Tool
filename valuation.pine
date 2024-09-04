@@ -1,0 +1,56 @@
+//@version=5
+indicator("Sovren Valuation Tool", overlay=false)
+
+// Inputs
+referenceSymbol1 = input.symbol("GC1!", title="Reference Symbol 1")
+referenceSymbol2 = input.symbol("DXY", title="Reference Symbol 2")
+referenceSymbol3 = input.symbol("EURUSD", title="Reference Symbol 3")
+
+showReferenceSymbol1 = input.bool(true, title="Show Reference Symbol 1")
+showReferenceSymbol2 = input.bool(true, title="Show Reference Symbol 2")
+showReferenceSymbol3 = input.bool(true, title="Show Reference Symbol 3")
+
+numDecimalsOfPrecision = input.int(3, title="Number of Decimals of Precision")
+rescaleLength = input.int(75, title="Rescale Length")  // Lookback period for normalization
+
+// Fetching the data for reference symbols
+referencePrice1 = request.security(referenceSymbol1, timeframe.period, close)
+referencePrice2 = request.security(referenceSymbol2, timeframe.period, close)
+referencePrice3 = request.security(referenceSymbol3, timeframe.period, close)
+
+// Calculate relative strength
+currentPrice = close
+
+float relativeStrength1 = na
+float relativeStrength2 = na
+float relativeStrength3 = na
+
+if showReferenceSymbol1
+    relativeStrength1 := currentPrice / referencePrice1
+if showReferenceSymbol2
+    relativeStrength2 := currentPrice / referencePrice2
+if showReferenceSymbol3
+    relativeStrength3 := currentPrice / referencePrice3
+
+// Calculate historical max and min for normalization
+maxRS1 = ta.highest(relativeStrength1, rescaleLength)
+minRS1 = ta.lowest(relativeStrength1, rescaleLength)
+
+maxRS2 = ta.highest(relativeStrength2, rescaleLength)
+minRS2 = ta.lowest(relativeStrength2, rescaleLength)
+
+maxRS3 = ta.highest(relativeStrength3, rescaleLength)
+minRS3 = ta.lowest(relativeStrength3, rescaleLength)
+
+// Normalize the relative strength values to a scale of 0-100
+normalizedRS1 = showReferenceSymbol1 ? 100 * (relativeStrength1 - minRS1) / (maxRS1 - minRS1) : na
+normalizedRS2 = showReferenceSymbol2 ? 100 * (relativeStrength2 - minRS2) / (maxRS2 - minRS2) : na
+normalizedRS3 = showReferenceSymbol3 ? 100 * (relativeStrength3 - minRS3) / (maxRS3 - minRS3) : na
+
+// Plotting the normalized values
+plot(normalizedRS1, title="Normalized Relative Strength 1", color=color.blue, linewidth=1)
+plot(normalizedRS2, title="Normalized Relative Strength 2", color=color.purple, linewidth=1)
+plot(normalizedRS3, title="Normalized Relative Strength 3", color=color.orange, linewidth=1)
+
+hline(20, "Horizontal Line at 20", color=color.gray, linewidth=1)
+hline(80, "Horizontal Line at 80", color=color.gray, linewidth=1)
